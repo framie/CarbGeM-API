@@ -13,6 +13,13 @@ const pythonPath = process.env.PYTHON_PATH;
 const uploadDir = path.join(__dirname, '..', 'uploads');
 const outputDir = path.join(__dirname, '..', 'output');
 
+[uploadDir, outputDir].forEach((dir) => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        console.log(`Created directory: ${dir}`);
+    }
+});
+
 const storage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, uploadDir),
     filename: (_req, file, cb) => cb(null, file.originalname)

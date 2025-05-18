@@ -129,7 +129,12 @@ def write_image_to_output(image, input_path, output_folder):
     image_filename, extension = os.path.splitext(input_path.split('\\')[-1])
     output_path = f"{output_folder}/{image_filename}{extension}"
     os.makedirs(output_folder, exist_ok=True)
-    return cv2.imwrite(output_path, image)
+    print("Attempting to write to:", output_path)
+    print("Directory exists:", os.path.exists(os.path.dirname(output_path)))
+    print("Image shape:", image.shape)
+    write_success =  cv2.imwrite(output_path, image)
+    if not write_success:
+        raise RuntimeError(f"Failed to write image to: {output_path}")
 
 
 def main():
@@ -178,8 +183,7 @@ def main():
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
     print("Writing image to output...")
-    write_success = write_image_to_output(output_image, input_path, output_folder)
-    print(f"{ 'Successfully processed image.' if write_success else 'Failed to write output image.'}")
+    write_image_to_output(output_image, input_path, output_folder)
 
 if __name__ == '__main__':
     main()

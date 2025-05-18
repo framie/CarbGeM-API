@@ -52,7 +52,7 @@ def write_agar_plate_info(image, agar_plate):
 
 # Detect and return Antibiotic Disk circles within image
 def get_antibiotic_disks(gray_image):
-    gray_blurred = cv2.medianBlur(gray_image, 11)
+    gray_blurred = cv2.medianBlur(gray_image, 13)
     antibiotic_disks = cv2.HoughCircles(
         gray_blurred,
         cv2.HOUGH_GRADIENT,
@@ -83,44 +83,32 @@ def clockwise_sort(image, antibiotic_disks):
 
 
 # Ray tracing function to detect Zone of Inhibition surrounding Antibiotic disk
-def raytrace_zoi(gray_image, center, start_radius=10, max_radius=150, step=1, angle_step=5):
+def raytrace_zoi(gray_image, center, start_radius, max_radius=150, step=1, angle_step=5):
     gray_blurred = cv2.medianBlur(gray_image, 11)
     cx, cy = center
     detected_radii = []
+    threshold=150
+    confirm_count=3
 
     for angle in range(0, 360, angle_step):
         rad = math.radians(angle)
-        intensities = []
-        points = []
+        consecutive_dark = 0
 
         for r in range(start_radius, max_radius, step):
             x = int(cx + r * math.cos(rad))
             y = int(cy + r * math.sin(rad))
-            if 0 <= x < gray_blurred.shape[1] and 0 <= y < gray_blurred.shape[0]:
-                intensities.append(gray_blurred[y, x])
-                points.append((x, y))
-            else:
+
+            if not (0 <= x < gray_blurred.shape[1] and 0 <= y < gray_blurred.shape[0]):
                 break
 
-        if len(intensities) < 15:
-            continue
-
-        # Smooth intensity profile
-        smoothed = np.convolve(intensities, np.ones(5) / 5, mode='valid')
-        gradient = np.gradient(smoothed)
-
-        # Search for first local *steep* negative gradient below a certain brightness
-        candidates = []
-        for i in range(3, len(gradient) - 3):
-            local_grad = gradient[i]
-            local_val = smoothed[i]
-            if local_grad < -1.5 and local_val < 200:
-                candidates.append((i, abs(local_grad)))
-
-        if candidates:
-            best_idx = min(candidates, key=lambda x: x[1])[0]
-            edge_r = start_radius + best_idx + 2
-            detected_radii.append(edge_r)
+            pixel_val = gray_blurred[y, x]
+            if pixel_val < threshold:
+                consecutive_dark += 1
+                if consecutive_dark >= confirm_count:
+                    detected_radii.append(r - (confirm_count - 1))
+                    break
+            else:
+                consecutive_dark = 0
 
     if detected_radii:
         return int(np.median(detected_radii))
@@ -173,7 +161,7 @@ def main():
         cv2.putText(output_image, f"Disk {i + 1}", (x, y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
-        outer_radius = raytrace_zoi(gray_image, (x, y), start_radius=r + 5, max_radius=int(plate_diameter_px // 2))
+        outer_radius = raytrace_zoi(gray_image, (x, y), start_radius=r + 1, max_radius=int(plate_diameter_px // 2))
         if outer_radius:
             cv2.circle(output_image, (x, y), outer_radius, (0, 0, 255), 2)
             diameter_mm = (outer_radius * 2) / px_per_mm

@@ -87,7 +87,7 @@ def raytrace_zoi(gray_image, center, start_radius, max_radius=150, step=1, angle
     gray_blurred = cv2.medianBlur(gray_image, 11)
     cx, cy = center
     detected_radii = []
-    threshold=150
+    threshold=155
     confirm_count=3
 
     for angle in range(0, 360, angle_step):
@@ -161,7 +161,7 @@ def main():
         cv2.putText(output_image, f"Disk {i + 1}", (x, y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
-        outer_radius = raytrace_zoi(gray_image, (x, y), start_radius=r + 2, max_radius=int(plate_diameter_px // 2))
+        outer_radius = raytrace_zoi(gray_image, (x, y), start_radius=r + 4, max_radius=int(plate_diameter_px // 2))
         if outer_radius:
             cv2.circle(output_image, (x, y), outer_radius, (0, 0, 255), 2)
             diameter_mm = (outer_radius * 2) / px_per_mm

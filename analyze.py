@@ -135,6 +135,7 @@ def write_image_to_output(image, input_path, output_folder):
 def main():
     input_path = sys.argv[1]
     output_folder = "output"
+    print(f"Reading input file { input_path }...")
 
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Image not found: {input_path}")
@@ -143,9 +144,11 @@ def main():
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray_blurred = cv2.medianBlur(gray, 31)
 
+
+    print(f"Identifying agar plate...")
     agar_plate = get_agar_plate(gray_blurred)
     if not agar_plate:
-        print("No Agar Plate found in Image.")
+        print("No agar plate found in Image.")
         return
 
     output_image = image.copy()
@@ -153,11 +156,13 @@ def main():
     plate_diameter_px = agar_plate[2] * 2
     px_per_mm = plate_diameter_px / 100
 
+    print(f"Identifying antibiotic disks...")
     antibiotic_disks = get_antibiotic_disks(gray_blurred)
     if not antibiotic_disks.any():
-        print("No Antibiotic disks found in Image.")
+        print("No antibiotic disks found in Image.")
         return
 
+    print(f"Sorting and processing disks...")
     antibiotic_disks = clockwise_sort(image, antibiotic_disks)
     for i, (x, y, r) in enumerate(antibiotic_disks):
         cv2.putText(output_image, f"Disk {i + 1}", (x, y),
@@ -170,6 +175,7 @@ def main():
             cv2.putText(output_image, f"{diameter_mm:.1f} mm", (x, y + 26),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
+    print(f"Writing image to output...")
     write_image_to_output(output_image, input_path, output_folder)
 
 if __name__ == '__main__':

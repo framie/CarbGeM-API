@@ -126,12 +126,9 @@ def raytrace_zoi(gray_img, center, start_radius=10, max_radius=150, step=1, angl
 
 # Write 
 def write_image_to_output(image, input_path, output_folder):
-    image_filename, extension = os.path.splitext(input_path.split('\\')[-1])
+    image_filename, extension = os.path.splitext(input_path.split('/')[-1])
     output_path = f"{output_folder}/{image_filename}{extension}"
     os.makedirs(output_folder, exist_ok=True)
-    print("Attempting to write to:", output_path)
-    print("Directory exists:", os.path.exists(os.path.dirname(output_path)))
-    print("Image shape:", image.shape)
     write_success =  cv2.imwrite(output_path, image)
     if not write_success:
         raise RuntimeError(f"Failed to write image to: {output_path}")

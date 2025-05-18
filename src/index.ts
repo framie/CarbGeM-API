@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 dotenv.config();  // Load env vars before anything else
 
@@ -25,6 +26,8 @@ const storage = multer.diskStorage({
     filename: (_req, file, cb) => cb(null, file.originalname)
 });
 const upload = multer({ storage });
+
+app.use(cors());
 
 app.post('/analyze', upload.single('image'), async (req: Request, res: Response) => {
     if (!req.file) {

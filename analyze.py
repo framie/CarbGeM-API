@@ -145,24 +145,26 @@ def main():
     gray_blurred = cv2.medianBlur(gray, 31)
 
 
-    print(f"Identifying agar plate...")
+    print("Identifying agar plate...")
     agar_plate = get_agar_plate(gray_blurred)
     if not agar_plate:
         print("No agar plate found in Image.")
         return
+    print(f"Found agar plate { agar_plate }")
 
     output_image = image.copy()
     write_agar_plate_info(output_image, agar_plate)
     plate_diameter_px = agar_plate[2] * 2
     px_per_mm = plate_diameter_px / 100
 
-    print(f"Identifying antibiotic disks...")
+    print("Identifying antibiotic disks...")
     antibiotic_disks = get_antibiotic_disks(gray_blurred)
     if not antibiotic_disks.any():
         print("No antibiotic disks found in Image.")
         return
+    print(f"Found antibiotic disks { antibiotic_disks }")
 
-    print(f"Sorting and processing disks...")
+    print("Sorting and processing disks...")
     antibiotic_disks = clockwise_sort(image, antibiotic_disks)
     for i, (x, y, r) in enumerate(antibiotic_disks):
         cv2.putText(output_image, f"Disk {i + 1}", (x, y),
@@ -175,7 +177,7 @@ def main():
             cv2.putText(output_image, f"{diameter_mm:.1f} mm", (x, y + 26),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
-    print(f"Writing image to output...")
+    print("Writing image to output...")
     write_image_to_output(output_image, input_path, output_folder)
 
 if __name__ == '__main__':

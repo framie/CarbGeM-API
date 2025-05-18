@@ -111,7 +111,7 @@ def raytrace_zoi(gray_img, center, start_radius=10, max_radius=150, step=1, angl
         for i in range(3, len(gradient) - 3):
             local_grad = gradient[i]
             local_val = smoothed[i]
-            if local_grad < -1.5 and local_val < 190:
+            if local_grad < -1 and local_val < 190:
                 candidates.append((i, abs(local_grad)))
 
         if candidates:

@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 dotenv.config();  // Load env vars before anything else
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const pythonPath = process.env.PYTHON_PATH;
 const uploadDir = path.join(__dirname, '..', 'uploads');
 const outputDir = path.join(__dirname, '..', 'output');
@@ -59,6 +59,6 @@ app.post('/analyze', upload.single('image'), async (req: Request, res: Response)
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
 });

@@ -15,11 +15,12 @@ def round_and_format_circles(circles):
 
 
 # Detect and return Agar Plate circle within image
-def get_agar_plate(blurred_image): 
-    image_height, image_width = blurred_image.shape[:2]
+def get_agar_plate(gray_image):
+    gray_blurred = cv2.medianBlur(gray_image, 31)
+    image_height, image_width = gray_blurred.shape[:2]
     max_radius = int(min(image_height, image_width) // 2)
     agar_plates = cv2.HoughCircles(
-        blurred_image,
+        gray_blurred,
         cv2.HOUGH_GRADIENT,
         dp=1.2,
         minDist=max_radius,
@@ -28,7 +29,7 @@ def get_agar_plate(blurred_image):
         minRadius=0,
         maxRadius=max_radius
     )
-    if not agar_plates.any():
+    if agar_plates is None or not agar_plates.any():
         return None
     agar_plates = round_and_format_circles(agar_plates[0])
     plate_x, plate_y, plate_r = max(agar_plates, key=lambda c: c[2])
@@ -50,19 +51,20 @@ def write_agar_plate_info(image, agar_plate):
 
 
 # Detect and return Antibiotic Disk circles within image
-def get_antibiotic_disks(blurred_image):
+def get_antibiotic_disks(gray_image):
+    gray_blurred = cv2.medianBlur(gray_image, 9)
     antibiotic_disks = cv2.HoughCircles(
-        blurred_image,
+        gray_blurred,
         cv2.HOUGH_GRADIENT,
         dp=1.2,
         minDist=100,
-        param1=100,
-        param2=30,
+        param1=50,
+        param2=60,
         minRadius=20,
         maxRadius=200
     )
-    if not antibiotic_disks.any():
-        return None
+    if antibiotic_disks is None or not antibiotic_disks.any():
+        return []
     return round_and_format_circles(antibiotic_disks[0])
 
 
@@ -81,7 +83,8 @@ def clockwise_sort(image, antibiotic_disks):
 
 
 # Ray tracing function to detect Zone of Inhibition surrounding Antibiotic disk
-def raytrace_zoi(gray_img, center, start_radius=10, max_radius=150, step=1, angle_step=5):
+def raytrace_zoi(gray_image, center, start_radius=10, max_radius=150, step=1, angle_step=5):
+    gray_blurred = cv2.medianBlur(gray_image, 15)
     cx, cy = center
     detected_radii = []
 
@@ -93,8 +96,8 @@ def raytrace_zoi(gray_img, center, start_radius=10, max_radius=150, step=1, angl
         for r in range(start_radius, max_radius, step):
             x = int(cx + r * math.cos(rad))
             y = int(cy + r * math.sin(rad))
-            if 0 <= x < gray_img.shape[1] and 0 <= y < gray_img.shape[0]:
-                intensities.append(gray_img[y, x])
+            if 0 <= x < gray_blurred.shape[1] and 0 <= y < gray_blurred.shape[0]:
+                intensities.append(gray_blurred[y, x])
                 points.append((x, y))
             else:
                 break
@@ -143,12 +146,10 @@ def main():
         raise FileNotFoundError(f"Image not found: {input_path}")
 
     image = cv2.imread(input_path)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray_blurred = cv2.medianBlur(gray, 31)
-
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     print("Identifying agar plate...")
-    agar_plate = get_agar_plate(gray_blurred)
+    agar_plate = get_agar_plate(gray_image)
     if not agar_plate:
         print("No agar plate found in Image.")
         return
@@ -160,8 +161,8 @@ def main():
     px_per_mm = plate_diameter_px / 100
 
     print("Identifying antibiotic disks...")
-    antibiotic_disks = get_antibiotic_disks(gray_blurred)
-    if not antibiotic_disks.any():
+    antibiotic_disks = get_antibiotic_disks(gray_image)
+    if len(antibiotic_disks) == 0:
         print("No antibiotic disks found in Image.")
         return
     print(f"Found antibiotic disks { antibiotic_disks }")
@@ -172,7 +173,7 @@ def main():
         cv2.putText(output_image, f"Disk {i + 1}", (x, y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
-        outer_radius = raytrace_zoi(gray_blurred, (x, y), start_radius=r + 5, max_radius=int(plate_diameter_px // 2))
+        outer_radius = raytrace_zoi(gray_image, (x, y), start_radius=r + 5, max_radius=int(plate_diameter_px // 2))
         if outer_radius:
             cv2.circle(output_image, (x, y), outer_radius, (0, 0, 255), 2)
             diameter_mm = (outer_radius * 2) / px_per_mm

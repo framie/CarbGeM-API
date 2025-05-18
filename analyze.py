@@ -52,7 +52,7 @@ def write_agar_plate_info(image, agar_plate):
 
 # Detect and return Antibiotic Disk circles within image
 def get_antibiotic_disks(gray_image):
-    gray_blurred = cv2.medianBlur(gray_image, 9)
+    gray_blurred = cv2.medianBlur(gray_image, 11)
     antibiotic_disks = cv2.HoughCircles(
         gray_blurred,
         cv2.HOUGH_GRADIENT,
@@ -84,7 +84,7 @@ def clockwise_sort(image, antibiotic_disks):
 
 # Ray tracing function to detect Zone of Inhibition surrounding Antibiotic disk
 def raytrace_zoi(gray_image, center, start_radius=10, max_radius=150, step=1, angle_step=5):
-    gray_blurred = cv2.medianBlur(gray_image, 15)
+    gray_blurred = cv2.medianBlur(gray_image, 11)
     cx, cy = center
     detected_radii = []
 
@@ -114,7 +114,7 @@ def raytrace_zoi(gray_image, center, start_radius=10, max_radius=150, step=1, an
         for i in range(3, len(gradient) - 3):
             local_grad = gradient[i]
             local_val = smoothed[i]
-            if local_grad < -1 and local_val < 190:
+            if local_grad < -0.9 and local_val < 190:
                 candidates.append((i, abs(local_grad)))
 
         if candidates:
